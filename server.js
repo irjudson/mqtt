@@ -4,6 +4,9 @@ var config = require('./config')
 
 var service = new nitrogen.Service(config);
 
+var FAILURE = 1;
+var SUCCESS = 0;
+
 var mqttServer = mqtt.createServer(function(client) {
 
     client.on('connect', function(packet) {
@@ -19,19 +22,19 @@ var mqttServer = mqtt.createServer(function(client) {
         });
 
         service.resume(principal, function(err, session, principal) {
-            if (err || !session) return client.connack({ returnCode: 1 });
+            if (err || !session) return client.connack({ returnCode: FAILURE });
 
             client.principal = principal;
             client.session = session;
 
-            return client.connack({ returnCode: 0 });
+            return client.connack({ returnCode: SUCCESS });
         });
     });
 
     client.on('publish', function(packet) {
         var message = new nitrogen.Message(JSON.parse(packet.payload));
         message.send(client.session, function(err, message) {
-            if (err) return client.puback({ returnCode: 1 });
+            if (err) return client.puback({ returnCode: FAILURE });
         });
     });
 
