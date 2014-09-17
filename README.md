@@ -20,9 +20,35 @@ The ID of the created device is the username that this device should use to auth
 
 2. Provision a long lived access token for the device using the command line tool:
 
-`> n2 principal accesstoken <DeviceID>`
+`> n2 principal accesstoken <device_id>`
 
-This will create a long lived accesstoken with the service that should be used as the password during MQTT authentication.
+This will create a long lived accesstoken with the service that should be used as the password during MQTT authentication.  For example, using the 'mqtt' module in node.js, interacting with the gateway would look something like this:
+
+``` javascript
+var client = mqtt.createClient(config.mqtt_port, config.mqtt_host, {
+    'username': principalId,
+    'password': accessToken
+});
+
+var topic = JSON.stringify({
+    type: 'temperature'
+});
+
+client.subscribe(topic);
+
+client.on('message', function (topic, messageText) {
+    var message = JSON.parse(messageText);
+
+    // do something with the message
+});
+
+client.publish('messages', JSON.stringify({
+    type:'temperature',
+    body: {
+        temperature: 45.0
+    }
+}));
+```
 
 ## Running tests
 
