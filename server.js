@@ -20,7 +20,6 @@ var mqttServer = mqtt.createServer(function(client) {
         client.id = packet.clientId;
         client.subscriptions = [];
 
-<<<<<<< HEAD
         var deviceConfig = {
             name: packet.clientId,
             nickname: packet.username,
@@ -37,10 +36,6 @@ var mqttServer = mqtt.createServer(function(client) {
                 console.log("Session: " + session);
                 return client.connack({ returnCode: 1 });
             }
-=======
-        service.resume(principal, function(err, session, principal) {
-            if (err || !session) return client.connack({ returnCode: FAILURE });
->>>>>>> 211f9589fc1a9c1d1835016454f757c002d3b589
 
             client.principal = principal;
             client.session = session;
