@@ -1,8 +1,6 @@
 # Nitrogen MQTT Bridge
 
-The MQTT bridge allows devices that can send or recieve MQTT messages to participate in the Nitrogen ecosystem.
-
-It establishes an MQTT endpoint that these clients can publish and subscribe to messages from.
+The MQTT bridge allows lower capability devices that can only send or recieve MQTT messages to participate in the Nitrogen ecosystem.
 
 ## Running the bridge:
 
@@ -10,6 +8,47 @@ It establishes an MQTT endpoint that these clients can publish and subscribe to 
 2. Fetch and install its node.js dependencies: `npm install`
 3. Edit `config.js` to change defaults as necessary.
 4. `npm start`
+
+## Provisioning a device
+
+To provision a device to use the MQTT gateway:
+1. Create the device with the command line tool:
+
+`> n2 principal create --type device --name 'my device' --apiKey 'API KEY HERE'`
+
+The ID of the created device is the username that this device should use to authenticate with the service.
+
+2. Provision a long lived access token for the device using the command line tool:
+
+`> n2 principal accesstoken <device_id>`
+
+This will create a long lived accesstoken with the service that should be used as the password during MQTT authentication.  For example, using the 'mqtt' module in node.js, interacting with the gateway would look something like this:
+
+``` javascript
+var client = mqtt.createClient(config.mqtt_port, config.mqtt_host, {
+    'username': principalId,
+    'password': accessToken
+});
+
+var topic = JSON.stringify({
+    type: 'temperature'
+});
+
+client.subscribe(topic);
+
+client.on('message', function (topic, messageText) {
+    var message = JSON.parse(messageText);
+
+    // do something with the message
+});
+
+client.publish('messages', JSON.stringify({
+    type:'temperature',
+    body: {
+        temperature: 45.0
+    }
+}));
+```
 
 ## Running tests
 

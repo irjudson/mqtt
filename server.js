@@ -4,6 +4,9 @@ var config = require('./config')
 
 var service = new nitrogen.Service(config);
 
+var FAILURE = 1;
+var SUCCESS = 0;
+
 var mqttServer = mqtt.createServer(function(client) {
 
     var self = this;
@@ -17,6 +20,7 @@ var mqttServer = mqtt.createServer(function(client) {
         client.id = packet.clientId;
         client.subscriptions = [];
 
+<<<<<<< HEAD
         var deviceConfig = {
             name: packet.clientId,
             nickname: packet.username,
@@ -33,11 +37,15 @@ var mqttServer = mqtt.createServer(function(client) {
                 console.log("Session: " + session);
                 return client.connack({ returnCode: 1 });
             }
+=======
+        service.resume(principal, function(err, session, principal) {
+            if (err || !session) return client.connack({ returnCode: FAILURE });
+>>>>>>> 211f9589fc1a9c1d1835016454f757c002d3b589
 
             client.principal = principal;
             client.session = session;
 
-            return client.connack({ returnCode: 0 });
+            return client.connack({ returnCode: SUCCESS });
         });
     });
 
@@ -70,7 +78,8 @@ var mqttServer = mqtt.createServer(function(client) {
             }});
         message.send(client.session, function(err, message) {
             if (err != null) {
-                console.log("Error publishing message: " + err);                
+                console.log("Error publishing message: " + err);   
+                return client.puback({ returnCode: FAILURE });             
             }
         });
         for (var k in self.clients) {
