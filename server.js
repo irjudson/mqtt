@@ -6,20 +6,33 @@ var service = new nitrogen.Service(config);
 
 var mqttServer = mqtt.createServer(function(client) {
 
+    var self = this;
+    if (!self.clients) self.clients = {};
+
     client.on('connect', function(packet) {
-        if (!packet.username || !packet.password)
-            return client.connack({ returnCode: 1 });
+        // console.log(packet);
+        if (!packet.username || !packet.password) return client.connack({ returnCode: 1 });            
+        
+        self.clients[packet.clientId] = client;
+        client.id = packet.clientId;
+        client.subscriptions = [];
 
-        var principal = new nitrogen.Device({
-            accessToken: {
-                token: packet.password
-            },
-            id: packet.username,
-            nickname: packet.username
-        });
+        var deviceConfig = {
+            name: packet.clientId,
+            nickname: packet.username,
+            tags: ['sends:telemetry'],
+            api_key: process.env.API_KEY
+        };
+        // console.log("New Device: " + JSON.stringify(deviceConfig));
+        var principal = new nitrogen.Device(deviceConfig);
 
-        service.resume(principal, function(err, session, principal) {
-            if (err || !session) return client.connack({ returnCode: 1 });
+        service.connect(principal, function(err, session, principal) {
+            if (err || !session) {
+                console.log("Returning error #2");
+                console.log("Error: " + err);
+                console.log("Session: " + session);
+                return client.connack({ returnCode: 1 });
+            }
 
             client.principal = principal;
             client.session = session;
@@ -28,25 +41,50 @@ var mqttServer = mqtt.createServer(function(client) {
         });
     });
 
-    client.on('publish', function(packet) {
-        var message = new nitrogen.Message(JSON.parse(packet.payload));
-        message.send(client.session, function(err, message) {
-            if (err) return client.puback({ returnCode: 1 });
-        });
+    client.on('subscribe', function(packet) {
+        var granted = [];
+
+        // console.log("SUBSCRIBE(%s): %j", client.id, packet);
+
+        for (var i = 0; i < packet.subscriptions.length; i++) {
+          var qos = packet.subscriptions[i].qos
+            , topic = packet.subscriptions[i].topic
+            , reg = new RegExp(topic.replace('+', '[^\/]+').replace('#', '.+') + '$');
+
+          granted.push(qos);
+          client.subscriptions.push(reg);
+        }
+
+        client.suback({messageId: packet.messageId, granted: granted});
     });
 
-    client.on('subscribe', function(packet) {
-        packet.subscriptions.forEach(function(subscription) {
-            var filter = JSON.parse(subscription.topic);
-            client.session.onMessage(filter, function(message) {
-                client.publish({
-                    topic: subscription.topic,
-                    payload: JSON.stringify(message)
-                });
-            });
+    client.on('publish', function(packet) {
+        // console.log("PUBLISH(%s): %j", client.id, packet);
+        var message = new nitrogen.Message({
+            // This is a horrible hack to map topics to message types, but hey. IRJ
+            type: "_"+packet.topic,
+            body: {
+                command: {
+                    payload: packet.payload
+                }
+            }});
+        message.send(client.session, function(err, message) {
+            if (err != null) {
+                console.log("Error publishing message: " + err);                
+            }
         });
+        for (var k in self.clients) {
+          var c = self.clients[k];
 
-        //client.suback(packet.messageId);
+          for (var i = 0; i < c.subscriptions.length; i++) {
+            var s = c.subscriptions[i];
+
+            if (s.test(packet.topic)) {
+              c.publish({topic: packet.topic, payload: packet.payload});
+              break;
+            }
+          }
+        }
     });
 
     client.on('pingreq', function(packet) {
@@ -54,7 +92,13 @@ var mqttServer = mqtt.createServer(function(client) {
     });
 
     client.on('disconnect', function(packet) {
-        client.session.stop();
+        client.stream.end();
     });
-
+    client.on('close', function(packet) {
+        delete self.clients[client.id];
+    });
+    client.on('error', function(e) {
+        client.stream.end();
+        console.log(e);
+    });
 }).listen(config.mqtt_port);
