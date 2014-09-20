@@ -1,7 +1,7 @@
 var Store = require('nitrogen-memory-store');
 
 var config = {
-    host: 'localhost',
+    host: 'nitrogen02.cloudapp.net',
     http_port: 3030,
     protocol: 'http',
 

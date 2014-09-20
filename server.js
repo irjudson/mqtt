@@ -26,7 +26,7 @@ var mqttServer = mqtt.createServer(function(client) {
             tags: ['sends:telemetry'],
             api_key: process.env.API_KEY
         };
-        // console.log("New Device: " + JSON.stringify(deviceConfig));
+        console.log("New Device: " + JSON.stringify(deviceConfig));
         var principal = new nitrogen.Device(deviceConfig);
 
         service.connect(principal, function(err, session, principal) {
@@ -47,7 +47,20 @@ var mqttServer = mqtt.createServer(function(client) {
     client.on('subscribe', function(packet) {
         var granted = [];
 
-        // console.log("SUBSCRIBE(%s): %j", client.id, packet);
+        console.log("SUBSCRIBE(%s): %j", client.id, packet);
+
+        var message = new nitrogen.Message({
+            // This is a horrible hack to map topics to message types, but hey. IRJ
+            type: "_mqtt-gw",
+            body: {
+                payload: packet
+            }});
+        message.send(client.session, function(err, message) {
+            if (err != null) {
+                console.log("Error publishing message: " + err);   
+                return client.puback({ returnCode: FAILURE });             
+            }
+        });
 
         for (var i = 0; i < packet.subscriptions.length; i++) {
           var qos = packet.subscriptions[i].qos
@@ -62,14 +75,12 @@ var mqttServer = mqtt.createServer(function(client) {
     });
 
     client.on('publish', function(packet) {
-        // console.log("PUBLISH(%s): %j", client.id, packet);
+        console.log("PUBLISH(%s): %j", client.id, packet);
         var message = new nitrogen.Message({
             // This is a horrible hack to map topics to message types, but hey. IRJ
-            type: "_"+packet.topic,
+            type: "_mqtt-gw",
             body: {
-                command: {
-                    payload: packet.payload
-                }
+                payload: packet
             }});
         message.send(client.session, function(err, message) {
             if (err != null) {
