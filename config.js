@@ -7,7 +7,7 @@ var config = {
 
     api_key: process.env.API_KEY,
     
-    mqtt_port: 11883
+    mqtt_port: 1883
 };
 
 config.store = new Store(config);
