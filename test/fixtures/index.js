@@ -23,7 +23,6 @@ var createPrincipal = function(callback) {
 };
 
 exports.reset = function(callback) {
-    console.log('reset');
     createPrincipal(callback);
 };
 
