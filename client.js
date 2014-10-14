@@ -2,31 +2,27 @@ var assert = require('assert')
   , config = require('./config')
   , mqtt = require('mqtt');
 
+var deviceId = process.env.DEVICE_ID || '54357f8a47b5a7f3095fcca4';
 var client = mqtt.createClient(config.mqtt_port, config.mqtt_host, {
-    'username': '5434865d96d383fa164794e2',
-    'password': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI1NDM0ODY1ZDk2ZDM4M2ZhMTY0Nzk0ZTIiLCJpYXQiOjE0MTI3Mjg2NzUsImV4cCI6MTQxMjgxNTA3NX0.FRvupjLl1aLK1X4n2w2kn9w6nMH5VGeo5ka9ZSuzAlY'
+    'username': deviceId,
+    'password': process.env.DEVICE_KEY || 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI1NDM1N2Y4YTQ3YjVhN2YzMDk1ZmNjYTQiLCJpYXQiOjE0MTI3OTIyMjQsImV4cCI6MTQxMjg3ODYyNH0.m7BZMvkFJIvnMTz2ZbMvPduJikOYok-OJmId5eIWMek'
 });
 
-var topic = JSON.stringify({
-    type: 'temperature'
-});
+var subscription = '{"to": \"'+deviceId+'\" }';
+client.subscribe(subscription);
 
-client.subscribe(topic);
-
-setTimeout(function() {
-    console.log('publishing');
-    client.publish('messages', JSON.stringify({
-        type:'temperature',
+setInterval(function() {
+    console.log('Sending telemetry data (the temperature).');
+    client.publish(subscription, JSON.stringify({
+        type:'_command',
         body: {
-            temperature: 45.0
+           temperature: 45.1
         }
     }));
-}, 2000);
+}, 10000);
 
 client.on('message', function (topic, message) {
-    console.log('received: ' + message);
     var messageObject = JSON.parse(message);
-    assert(messageObject.body.temperature, 45.0);
-
-    client.end();
+    console.log(messageObject.body.temperature);
+    assert(messageObject.body.temperature, 45.1);
 });

@@ -1,13 +1,13 @@
 var Store = require('nitrogen-memory-store');
 
 var config = {
-    host: 'localhost',
-    http_port: 3030,
-    protocol: 'http',
-
+    host: process.env.HOST_NAME || 'api.nitrogen.io',
+    http_port: process.env.PORT || 443,
+    protocol: process.env.PROTOCOL || 'https',
     api_key: process.env.API_KEY,
-    
-    mqtt_port: 11883
+    mqtt_host: 'localhost',
+    mqtt_port: 1883,
+    log_levels: [ "debug", "info", "warn", "error" ]
 };
 
 config.store = new Store(config);
