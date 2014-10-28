@@ -5,7 +5,7 @@ var config = {
     http_port: process.env.PORT || 443,
     protocol: process.env.PROTOCOL || 'https',
     api_key: process.env.API_KEY,
-    mqtt_host: 'localhost',
+    mqtt_host: process.env.MQTT_HOST_NAME || 'localhost',
     mqtt_port: 1883,
     log_levels: [ "debug", "info", "warn", "error" ]
 };
