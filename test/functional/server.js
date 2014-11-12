@@ -4,35 +4,37 @@ var assert = require('assert')
   , mqtt = require('mqtt')
   , nitrogen = require('nitrogen');
 
-describe('bridge', function() {
+describe('MQTT bridge', function() {
 
     it('should be able to publish message and receive it back', function(done) {
+        this.timeout(10000);
         var client = mqtt.createClient(config.mqtt_port, config.mqtt_host, {
             'username': fixtures.fixtures.principalId,
             'password': fixtures.fixtures.accessToken
         });
 
-        var topic = JSON.stringify({
-            type: 'temperature'
-        });
+        var subscription = '{"to": \"'+fixtures.fixtures.principalId+'\" }';
+        client.subscribe(subscription);
 
-        client.subscribe(topic);
-
-        setTimeout(function() {
-            client.publish('messages', JSON.stringify({
-                type:'temperature',
+        setInterval(function() {
+            console.log('Sending telemetry data (the temperature).');
+            client.publish(subscription, JSON.stringify({
+                to: fixtures.fixtures.principalId,
+                type:'_command',
                 body: {
-                    temperature: 45.0
+                   temperature: 45.0
                 }
             }));
-        }, 1000);
+        }, 5000);
 
+        var finished = false;
         client.on('message', function (topic, message) {
             var messageObject = JSON.parse(message);
-            assert(messageObject.body.temperature, 45.0);
-
-            client.end();
-            done();
+            assert(messageObject.temperature, 45.0);
+            if (!finished) {
+                done();
+                finished = true;
+            }
         });
     });
 
@@ -42,11 +44,9 @@ describe('bridge', function() {
             'password': fixtures.fixtures.accessToken
         });
 
-        var topic = JSON.stringify({
-            to: fixtures.fixtures.principalId
-        });
+        var subscription = '{"to": \"'+fixtures.fixtures.principalId+'\" }';
 
-        client.subscribe(topic);
+        client.subscribe(subscription);
 
         setTimeout(function() {
             var user = new nitrogen.User({
@@ -61,8 +61,8 @@ describe('bridge', function() {
                 assert(session);
 
                 new nitrogen.Message({
-                    type:'_command',
                     to: fixtures.fixtures.principalId,
+                    type:'_command',
                     body: {
                         doit: true
                     }
@@ -74,7 +74,7 @@ describe('bridge', function() {
 
         client.on('message', function (topic, message) {
             var messageObject = JSON.parse(message);
-            assert(messageObject.type, "_command");
+            assert(messageObject.doit, true);
 
             client.end();
             done();

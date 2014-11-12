@@ -21,7 +21,9 @@
     "nitrogen": "~0.2",
     "nitrogen-memory-store": "~0.2.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "async" : "latest"
+    },
   "scripts": {
     "start": "node server.js",
     "test": "NODE_ENV=test mocha"
