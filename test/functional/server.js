@@ -25,57 +25,60 @@ describe('MQTT bridge', function() {
                    temperature: 45.0
                 }
             }));
+        }, 5000);
+
+        var finished = false;
+        client.on('message', function (topic, message) {
+            var messageObject = JSON.parse(message);
+            assert(messageObject.temperature, 45.0);
+            if (!finished) {
+                done();
+                finished = true;
+            }
+        });
+    });
+
+    it('should be able to send message from non-gatewayed principal and receive it on subscribed gatewayed MQTT device', function(done) {
+        var client = mqtt.createClient(config.mqtt_port, config.mqtt_host, {
+            'username': fixtures.fixtures.principalId,
+            'password': fixtures.fixtures.accessToken
+        });
+
+        var subscription = '{"to": \"'+fixtures.fixtures.principalId+'\" }';
+
+        client.subscribe(subscription);
+
+        setTimeout(function() {
+            var user = new nitrogen.User({
+                nickname: 'user',
+                email: process.env.NITROGEN_EMAIL,
+                password: process.env.NITROGEN_PASSWORD
+            });
+
+            var service = new nitrogen.Service(config);
+            service.authenticate(user, function(err, session, user) {
+                assert(!err);
+                assert(session);
+
+                new nitrogen.Message({
+                    to: fixtures.fixtures.principalId,
+                    type:'_command',
+                    body: {
+                        doit: true
+                    }
+                }).send(session, function(err) {
+                    assert(!err);
+                });
+            });
         }, 1000);
 
         client.on('message', function (topic, message) {
             var messageObject = JSON.parse(message);
-            assert(messageObject.temperature, 45.0);
+            assert(messageObject.doit, true);
+
+            client.end();
             done();
         });
     });
-
-    // it('should be able to send message from non-gatewayed principal and receive it on subscribed gatewayed MQTT device', function(done) {
-    //     var client = mqtt.createClient(config.mqtt_port, config.mqtt_host, {
-    //         'username': fixtures.fixtures.principalId,
-    //         'password': fixtures.fixtures.accessToken
-    //     });
-
-    //     var subscription = '{"to": \"'+fixtures.fixtures.principalId+'\" }';
-
-    //     client.subscribe(subscription);
-
-    //     setTimeout(function() {
-    //         var user = new nitrogen.User({
-    //             nickname: 'user',
-    //             email: process.env.NITROGEN_EMAIL,
-    //             password: process.env.NITROGEN_PASSWORD
-    //         });
-
-    //         var service = new nitrogen.Service(config);
-    //         service.authenticate(user, function(err, session, user) {
-    //             assert(!err);
-    //             assert(session);
-
-    //             new nitrogen.Message({
-    //                 type:'_command',
-    //                 to: fixtures.fixtures.principalId,
-    //                 body: {
-    //                     doit: true
-    //                 }
-    //             }).send(session, function(err) {
-    //                 assert(!err);
-    //             });
-    //         });
-    //     }, 1000);
-
-    //     client.on('message', function (topic, message) {
-    //         var messageObject = JSON.parse(message);
-    //         console.log(message);
-    //         assert(messageObject.type, "_command");
-
-    //         client.end();
-    //         done();
-    //     });
-    // });
 
 });
