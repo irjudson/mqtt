@@ -1,11 +1,11 @@
 var assert = require('assert')
-  , config = require('./config')
+  , config = require('../config')
   , mqtt = require('mqtt');
 
-var deviceId = process.env.DEVICE_ID || '54357f8a47b5a7f3095fcca4';
+var deviceId = process.env.DEVICE_ID || '5462ae6b5ad8efad0443b99f';
 var client = mqtt.createClient(config.mqtt_port, config.mqtt_host, {
     'username': deviceId,
-    'password': process.env.DEVICE_KEY || 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI1NDM1N2Y4YTQ3YjVhN2YzMDk1ZmNjYTQiLCJpYXQiOjE0MTI3OTIyMjQsImV4cCI6MTQxMjg3ODYyNH0.m7BZMvkFJIvnMTz2ZbMvPduJikOYok-OJmId5eIWMek'
+    'password': process.env.DEVICE_KEY || 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiI1NDYyYWU2YjVhZDhlZmFkMDQ0M2I5OWYiLCJpYXQiOjE0MTU3NTY3NjYsImV4cCI6MTQxNTg0MzE2Nn0.GSFFpWTe_VqgkG2hcIqDwFk_UScS2_RQzRy2BmECDjE'
 });
 
 var subscription = '{"to": \"'+deviceId+'\" }';
