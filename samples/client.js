@@ -14,6 +14,7 @@ client.subscribe(subscription);
 setInterval(function() {
     console.log('Sending telemetry data (the temperature).');
     client.publish(subscription, JSON.stringify({
+        to: deviceId,
         type:'_command',
         body: {
            temperature: 45.1
@@ -23,6 +24,6 @@ setInterval(function() {
 
 client.on('message', function (topic, message) {
     var messageObject = JSON.parse(message);
-    console.log(messageObject.body.temperature);
-    assert(messageObject.body.temperature, 45.1);
+    console.log(messageObject.temperature);
+    assert(messageObject.temperature, 45.1);
 });

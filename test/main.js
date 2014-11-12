@@ -6,7 +6,6 @@ var assert = require('assert')
 before(function(done) {
     fixtures.reset(function(err) {
         assert(!err); 
-
         done();
     });
 });
