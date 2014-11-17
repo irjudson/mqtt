@@ -38,11 +38,13 @@ var mqttServer = mqtt.createServer(function(client) {
     });
 
     client.on('publish', function(packet) {
-        console.log("PUBLISH: " + JSON.stringify(packet));
-        var message = new nitrogen.Message(JSON.parse(packet.payload));
-        message.send(client.session, function(err, message) {
-            if (err) return client.puback({ returnCode: FAILURE });
-        });
+        if (client.session != null) {
+            console.log("PUBLISH: " + JSON.stringify(packet));
+            var message = new nitrogen.Message(JSON.parse(packet.payload));
+            message.send(client.session, function(err, message) {
+                if (err) return client.puback({ returnCode: FAILURE });
+            });            
+        }
     });
 
     client.on('subscribe', function(packet) {
@@ -79,8 +81,7 @@ var mqttServer = mqtt.createServer(function(client) {
     });
 
     client.on('error', function(e) {
-        console.log("ERROR: " + JSON.stringify(e));
+        console.log("ERROR: " + e);
         client.stream.end();
-        console.log(e);
     });
 }).listen(config.mqtt_port);
